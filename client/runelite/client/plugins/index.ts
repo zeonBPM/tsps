@@ -19,6 +19,7 @@ import { RunEnergyPlugin } from "../../../game/plugins/runenergy/RunEnergyPlugin
 import { TimestampPlugin } from "../../../game/plugins/timestamp/TimestampPlugin";
 import { TickCounterPlugin } from "../../../game/plugins/tickcounter/TickCounterPlugin";
 import { WikiPlugin } from "../../../game/plugins/wiki/WikiPlugin";
+import { SkillsProgressBarsPlugin } from "../../../game/plugins/skillsprogressbars/SkillsProgressBarsPlugin";
 import { CombatLevelPlugin } from "../../../game/plugins/combatlevel/CombatLevelPlugin";
 import { CameraPlugin } from "../../../game/plugins/camera/CameraPlugin";
 import { IsometricCameraPlugin } from "../../../game/plugins/isometric/IsometricCameraPlugin";
@@ -152,6 +153,7 @@ export const CORE_PLUGINS: ReadonlyArray<PluginClass> = [
     IsometricCameraPlugin,
     WasdCameraPlugin,
     QuestHelperPlugin,
+    SkillsProgressBarsPlugin,
     XpTrackerPlugin,
     XpGlobesPlugin,
     CustomXpDropsPlugin,
