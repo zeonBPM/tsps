@@ -34,7 +34,9 @@ collide with cache items.
   sprite zoom and angles, recolours).
 - `itemDef`: server-side fields that override the base: `equipmentType`, `weaponInterface`,
   `bonuses`, `requirements`, the flags `doubleHanded`, `stackable`, `tradeable`, `dropable`,
-  `sellable`, and numbers such as `value` and the animations.
+  `sellable`, and numbers such as `value` and the animations. Explicit `bonuses` are also mirrored
+  into the client definition's cache stat params so Item Stats hover panels agree with combat;
+  without them, both sides inherit the base item's stats.
 - `models` (optional): model ids (1000000+) mapped to `.dat` files under `server/data/models/`.
   Every `objType` model field of 1000000 or more must name one of them.
 - `specialAttack` (optional): see below.

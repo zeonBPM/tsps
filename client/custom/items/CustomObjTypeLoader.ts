@@ -2,7 +2,17 @@ import type { CacheInfo } from "../../rs/cache/CacheInfo";
 import { ObjType } from "../../rs/config/objtype/ObjType";
 import type { ObjTypeLoader } from "../../rs/config/objtype/ObjTypeLoader";
 import { CustomItemRegistry } from "./CustomItemRegistry";
-import type { CustomObjTypeProps } from "./CustomItemTypes";
+import type { CustomObjTypeProps, ItemBonuses } from "./CustomItemTypes";
+
+// Bonus indices and cache params from docs/item-bonuses.md.
+const BONUS_PARAMS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
+const PRAYER_PARAM = 11;
+const AMMO_RANGED_STRENGTH_PARAM = 12;
+const RANGED_STRENGTH_PARAM = 189;
+const MAGIC_DAMAGE_PARAM = 299;
+const CUSTOM_STAT_PARAMS = [
+    ...BONUS_PARAMS, PRAYER_PARAM, AMMO_RANGED_STRENGTH_PARAM, RANGED_STRENGTH_PARAM, MAGIC_DAMAGE_PARAM,
+];
 
 /**
  * Wrapping ObjTypeLoader that injects custom items.
@@ -39,6 +49,7 @@ export class CustomObjTypeLoader implements ObjTypeLoader {
                 id,
                 customItem.definition.objType,
                 customItem.definition.baseItemId,
+                customItem.definition.itemDef?.bonuses,
             );
             this.customCache.set(id, objType);
             return objType;
@@ -52,6 +63,7 @@ export class CustomObjTypeLoader implements ObjTypeLoader {
         id: number,
         props: CustomObjTypeProps,
         baseItemId?: number,
+        bonuses?: ItemBonuses,
     ): ObjType {
         let objType: ObjType;
 
@@ -66,8 +78,29 @@ export class CustomObjTypeLoader implements ObjTypeLoader {
 
         // Apply custom properties
         this.applyCustomProps(objType, props);
+        this.applyCustomBonuses(objType, bonuses);
 
         return objType;
+    }
+
+    /**
+     * Hover stats read cache params, while combat reads the server's bonus array. Mirror explicit
+     * custom bonuses into the params so both agree, and clear the base item's inherited stats.
+     */
+    private applyCustomBonuses(objType: ObjType, bonuses?: ItemBonuses): void {
+        if (!bonuses) return;
+        const params = objType.params ?? (objType.params = new Map());
+        for (const param of CUSTOM_STAT_PARAMS) params.delete(param);
+        for (let i = 0; i < BONUS_PARAMS.length; i++) {
+            params.set(BONUS_PARAMS[i], this.bonusValue(bonuses[i]));
+        }
+        params.set(PRAYER_PARAM, this.bonusValue(bonuses[13]));
+        params.set(RANGED_STRENGTH_PARAM, this.bonusValue(bonuses[11]));
+        params.set(MAGIC_DAMAGE_PARAM, this.bonusValue(bonuses[12]) * 10);
+    }
+
+    private bonusValue(value: number | undefined): number {
+        return typeof value === "number" && Number.isFinite(value) ? value : 0;
     }
 
     private cloneObjType(newId: number, source: ObjType): ObjType {

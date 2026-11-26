@@ -70,7 +70,7 @@ test('older saved project revisions survive optional schema additions',()=>{
     const changed=store.read(p.id).project;changed.name='Still editable';assert.equal(store.save(changed,revision).project.name,'Still editable');
 });
 test('generated ZIPs pass TSPS importer and enforce packet and package budgets', () => {
-    for (const p of [creature(), gear()]) { const compiled = compileProject(p, cache), parsed = readPluginZip(pluginZip(compiled)); assert.equal(parsed.manifest.name, compiled.manifest.name); assert.equal(parsed.source, compiled.code); assert.equal(parsed.manifest.category, '@ Ghost Plugins @'); }
+    for (const p of [creature(), gear()]) { const compiled = compileProject(p, cache), parsed = readPluginZip(pluginZip(compiled)); assert.equal(parsed.manifest.name, compiled.manifest.name); assert.equal(parsed.source, compiled.code); assert.equal(parsed.manifest.category, '@ Ghost Plugins @'); if (p.kind === 'gear') assert.deepEqual(compiled.content.item.itemDef.bonuses, p.settings.bonuses); }
     assert.throws(() => transportCheck('models', [{ data: Array.from({ length: 150000 }, (_, i) => `${i * Math.random()}`).join('') }]), /packet budget/);
 });
 function environment() {
@@ -87,7 +87,7 @@ test('plugin registration is attach-only; new definitions and models coexist wit
     env.hooks.startup(); assert.equal(env.npcs.get(p.ids.definition).attackType, 0); assert.equal(env.defs[0].baseId, 655); assert.equal(env.models[0].data, 'existing');
     const claim = { killer: {}, npcId: p.ids.definition, handled: false, npc: { getLocation: () => ({ x: 1, y: 2 }) } }; env.hooks['npc-drops:claim'](claim); assert.equal(claim.handled, true); assert.deepEqual(JSON.parse(JSON.stringify(env.emitted.at(-1)[1].drops)), [{ itemId: 995, amount: 5 }]);
     const other = { ...claim, npcId: 655, handled: false }; env.hooks['npc-drops:claim'](other); assert.equal(other.handled, false);
-    const g = gear(); load(compileProject(g, cache), env); env.hooks.startup(); assert.equal(env.items.length, 2); assert.equal(env.items[0].objType.name, 'Unrelated'); assert.ok(env.models.some(row => row.id === p.ids.modelBase)); assert.equal(env.itemDefs.get(g.ids.definition).attackSpeed, 4);
+    const g = gear(); load(compileProject(g, cache), env); env.hooks.startup(); assert.equal(env.items.length, 2); assert.equal(env.items[0].objType.name, 'Unrelated'); assert.deepEqual(JSON.parse(JSON.stringify(env.items.find(row => row.id === g.ids.definition).itemDef.bonuses)), g.settings.bonuses); assert.ok(env.models.some(row => row.id === p.ids.modelBase)); assert.equal(env.itemDefs.get(g.ids.definition).attackSpeed, 4);
 });
 test('runtime rejects model and definition collisions before mutating registries', () => {
     for (const collision of ['model', 'npc', 'gear']) {

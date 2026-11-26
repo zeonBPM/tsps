@@ -85,8 +85,8 @@ export interface CustomObjTypeProps {
 }
 
 /**
- * Server-level properties (ItemDefinition) for custom items.
- * These affect server-side game logic like combat, equipment, and trading.
+ * Gameplay properties (ItemDefinition) for custom items. The server uses these for combat and
+ * equipment; the client mirrors `bonuses` into cache stat params so hover tooltips agree.
  */
 export interface CustomItemDefProps {
     // Equipment
