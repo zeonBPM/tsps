@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Creator Studio</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23f0a020'/%3E%3Cpath d='M4 12 8 3l4 9z' fill='%232a1c05'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/ui/style.css">
+</head>
+<body>
+<header class="top">
+  <h1>Creator Studio</h1>
+  <div class="meters" id="meters"></div>
+  <div class="top-right">
+    <span id="free-ids"></span>
+    <button class="btn quiet place" id="open-game" title="Choose your game server folder, or an OSRS cache to use the Studio without a server"><i class="dot" id="game-dot"></i>Game folder</button>
+    <button class="btn quiet place" id="open-rs3" title="Find or choose the RS3 cache to port items from"><i class="dot" id="rs3-dot"></i>RS3 cache</button>
+    <a class="btn quiet" href="/docs/guide.html" target="_blank" rel="noopener">Guide</a>
+  </div>
+</header>
+<div class="strip" id="strip" hidden></div>
+
+<main class="layout">
+  <nav class="browser" aria-label="Browse">
+    <div class="tabs" role="tablist" id="tabs">
+      <button role="tab" data-tab="item" aria-selected="true">Game items</button>
+      <button role="tab" data-tab="npc">Game NPCs</button>
+      <button role="tab" data-tab="rs3">RS3 items</button>
+      <button role="tab" data-tab="anim">Animations</button>
+      <button role="tab" data-tab="drafts">My drafts</button>
+      <button role="tab" data-tab="ports">Ported</button>
+    </div>
+    <div class="search" id="search-box">
+      <input id="q" type="search" placeholder="Search by name or id" autocomplete="off" spellcheck="false">
+    </div>
+    <ul class="results" id="results"></ul>
+  </nav>
+
+  <section class="stage">
+    <div class="toolbar">
+      <div class="seg" id="views" role="group" aria-label="What to show">
+        <button data-view="ground" aria-pressed="true">Item model</button>
+        <button data-view="male">Worn, male</button>
+        <button data-view="female">Worn, female</button>
+      </div>
+      <label class="field inline">Animation
+        <select id="anim"></select>
+      </label>
+      <button class="btn quiet" id="play" title="Play or pause the animation">Pause</button>
+      <label class="check"><input type="checkbox" id="heat" checked> Stretch colours</label>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="view" tabindex="0" aria-label="3D model view"></canvas>
+      <button class="btn quiet corner" id="reset-cam" title="Put the camera back (or double-click the model)">Reset view</button>
+      <div class="hint" id="hint">Drag to rotate. Right-drag or Shift-drag to move. Scroll to zoom.</div>
+      <div class="empty" id="empty">
+        <h2>Pick something on the left</h2>
+        <p>Every item and NPC in the game is in the list, and so is every item in your RS3 cache. Open one to look at it from any angle, then make a custom version or port it.</p>
+      </div>
+    </div>
+    <div class="statusline" id="statusline">&nbsp;</div>
+  </section>
+
+  <aside class="inspector" id="inspector" aria-label="Details"></aside>
+</main>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <h2 id="modal-title"></h2>
+    <div id="modal-body"></div>
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="/lib/model.js"></script>
+<script src="/lib/anim.js"></script>
+<script src="/ui/viewer.js"></script>
+<script src="/ui/app.js"></script>
+</body>
+</html>

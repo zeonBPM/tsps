@@ -1,0 +1,39 @@
+RS3 cache folder
+================
+
+Put an RS3 cache in this folder and Creator Studio finds it by itself the next time it starts
+(or straight away: press "RS3 cache" at the top of the app, then "Search this computer").
+
+You do not have to use this folder. A cache anywhere on your computer works too, for example in Downloads:
+press "RS3 cache" in the app and choose where it is.
+
+What a cache looks like
+  A folder full of numbered folders, each full of .dat files:
+
+      rs3-cache\
+          19\      0.dat  1.dat  2.dat ...
+          47\      1.dat  2.dat  3.dat ...
+          255\     19.dat  47.dat ...
+
+  This is called "flat file" layout. The numbered folders can sit directly in here, or one or two folders down
+  (rs3-cache\cache\19\... and rs3-cache\950\cache\19\... are both found).
+
+Where to get one
+  Caches are not included: RuneScape's game data belongs to Jagex.
+  The OpenRS2 Archive (https://archive.openrs2.org) lists RuneScape caches by build. Each one has a
+  "Cache (Flat file)" download called flat-file.tar.gz. Unpack it (7-Zip opens .tar.gz) and put the result here.
+  A cache copied out of a game install (.jcache files) is a different form and is not read.
+
+Which folders are needed
+  255  index tables        19  items        47  models
+  26   materials           53  textures     27  particles (cape effects)
+  Keep 16 (objects) and 18 (NPCs) as well. Everything else can be left out to save space:
+  build 950 is about 23 GB whole and about 3.3 GB with only these.
+
+More than one cache
+  Give each its own folder in here (rs3-cache\950\..., rs3-cache\910\...) and pick the one to use with the
+  "RS3 cache" button.
+
+Does my cache work?
+  The Studio was built on build 950. When you choose a cache the app tests it and tells you.
+  From a terminal in the Studio folder:   node cli.js rs3check

@@ -1,0 +1,27 @@
+OSRS cache folder
+=================
+
+You only need this if you have NO game server folder to point the Studio at.
+
+With a game server, the Studio reads the server's own cache (its caches\ folder) and this folder stays empty.
+
+Without one, put an OSRS cache here and the Studio runs by itself: every viewer and editor works, and "Export
+files" writes what you make into the Studio's export folder.
+
+What a cache looks like
+  The game's own cache files:
+
+      osrs-cache\
+          main_file_cache.dat2
+          main_file_cache.idx0
+          main_file_cache.idx1  ...
+          main_file_cache.idx255
+
+  They can sit directly in here, or one or two folders down.
+
+Where to get one
+  Caches are not included: the game data belongs to Jagex.
+  The OpenRS2 Archive (https://archive.openrs2.org) lists Old School caches. Take the "Cache (.dat2/.idx)"
+  download called disk.zip and unpack it here.
+
+You can also keep the cache anywhere else: press "Game folder" at the top of the app and choose where it is.
