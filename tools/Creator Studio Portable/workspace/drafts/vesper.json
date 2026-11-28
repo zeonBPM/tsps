@@ -1,0 +1,40 @@
+{
+  "kind": "npc",
+  "name": "Vesper",
+  "id": null,
+  "source": {
+    "type": "osrs",
+    "id": 1119,
+    "name": "Woman"
+  },
+  "npc": {
+    "baseNpcId": 1119,
+    "fields": {
+      "recolorFrom": [
+        43072,
+        25238,
+        4550,
+        5297,
+        6798,
+        0,
+        8741,
+        4626
+      ],
+      "recolorTo": [
+        10,
+        57483,
+        43102,
+        4661,
+        115,
+        9024,
+        62999,
+        10
+      ]
+    },
+    "models": null,
+    "combat": {},
+    "spawns": []
+  },
+  "slug": "vesper",
+  "updated": "2026-11-28T02:33:01.325Z"
+}

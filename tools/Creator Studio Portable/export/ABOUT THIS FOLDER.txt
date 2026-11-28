@@ -1,0 +1,7 @@
+Creator Studio writes here when it has no game server ("Export files").
+
+data\definitions  the rows a supported server reads (custom-items.json and the others)
+data\models       the model files those rows name (standard OSRS model files)
+backups           what each export replaced, so it can be undone from the Ported tab
+
+Copy data\ into a server that can load it, or pass it to whoever runs one. docs\AGENT-GUIDE.md section 3 says what a server needs for each file.

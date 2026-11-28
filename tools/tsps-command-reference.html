@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>tsps Command Reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;padding:0}
+[hidden]:not([hidden=until-found i]){display:none!important}
+</style>
+<style>
+/* Layout: sticky filter bar; each section is a three-column ledger (syntax | rank | notes), one command per row */
+:root {
+  --bg: #f6f7f4; --surface: #ffffff; --fg: #1d2420; --muted: #5f6b63; --faint: #8b968e; --line: #e1e5de; --stripe: #eef1ea;
+  --accent: #82640f; --cmd: #1d2420; --arg: #6b5a1c;
+  --rk-o: #7b3fa0; --rk-a: #1f6aa8; --rk-p: #3f7d3a; --hit: #f3dd8a; --tag-bg: #e9ece4;
+  --f-display: "Space Grotesk", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --col-syn: minmax(0, 23rem); --col-rk: 1.9rem;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #151916; --surface: #1c211d; --fg: #e3e8e2; --muted: #a0aba3; --faint: #737e76; --line: #2a312c; --stripe: #1a1f1b;
+  --accent: #e0bf5a; --cmd: #f1f4ef; --arg: #d9c27a;
+  --rk-o: #c79be6; --rk-a: #79b4ea; --rk-p: #8cc985; --hit: #5d4d14; --tag-bg: #262d28; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #151916; --surface: #1c211d; --fg: #e3e8e2; --muted: #a0aba3; --faint: #737e76; --line: #2a312c; --stripe: #1a1f1b;
+  --accent: #e0bf5a; --cmd: #f1f4ef; --arg: #d9c27a;
+  --rk-o: #c79be6; --rk-a: #79b4ea; --rk-p: #8cc985; --hit: #5d4d14; --tag-bg: #262d28; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 14.5px/1.5 var(--f-body); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 1080px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 72px; }
+header h1 { font: 600 28px/1.15 var(--f-display); margin: 0 0 6px; text-wrap: balance; }
+header h1 span { color: var(--accent); font-family: var(--f-mono); font-weight: 500; }
+header p { margin: 0; color: var(--muted); max-width: 72ch; }
+header code { font: 13px var(--f-mono); color: var(--arg); }
+
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 14px 10px; border-bottom: 1px solid var(--line); margin-top: 18px; display: grid; gap: 10px; }
+.search { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+#q { flex: 1 1 260px; min-width: 0; font: 15px var(--f-mono); padding: 9px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--fg); }
+#q:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.meta { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; font-size: 12.5px; color: var(--muted); }
+#count { font-variant-numeric: tabular-nums; }
+nav { display: flex; gap: 4px 16px; flex-wrap: wrap; font-size: 13px; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover, nav a:focus-visible { color: var(--accent); text-decoration: underline; }
+
+.sec { margin-top: 34px; scroll-margin-top: 140px; }
+.sec h2 { font: 600 20px/1.2 var(--f-display); margin: 0 0 4px; padding-bottom: 8px; border-bottom: 2px solid var(--fg); }
+.grp { margin-top: 14px; }
+.grp h3 { font: 600 11.5px/1 var(--f-display); text-transform: uppercase; letter-spacing: .09em; color: var(--accent); margin: 18px 0 4px; }
+.gnote { margin: 4px 0 6px; color: var(--muted); font-size: 13px; max-width: 80ch; }
+.gnote code, .nt code, .prose code { font: 12.5px var(--f-mono); color: var(--arg); }
+
+.blk { border-bottom: 1px solid var(--line); padding-block: 3px; }
+.row { display: grid; grid-template-columns: var(--col-syn) var(--col-rk) minmax(0, 1fr); column-gap: 14px; align-items: baseline; padding: 4px 6px; border-radius: 4px; }
+.row:hover { background: var(--stripe); }
+.syn { min-width: 0; overflow-wrap: anywhere; }
+.syn code { font: 500 13.5px/1.45 var(--f-mono); cursor: copy; border-radius: 3px; }
+.syn code:hover .cn, .syn code:focus-visible .cn { text-decoration: underline; text-underline-offset: 3px; }
+.syn code.copied { outline: 1px solid var(--accent); outline-offset: 2px; }
+.cn { color: var(--cmd); font-weight: 600; }
+.ca { color: var(--arg); font-weight: 400; }
+.sep { color: var(--faint); margin: 0 .4em; font-family: var(--f-mono); }
+.nt { color: var(--muted); font-size: 13.5px; min-width: 0; overflow-wrap: anywhere; }
+.plain .syn { font-size: 13.5px; color: var(--muted); grid-column: 1 / 2; }
+.plain { grid-template-columns: minmax(0, 1fr) var(--col-rk) 0; }
+.tag { display: inline-block; font: 500 11px/1 var(--f-body); background: var(--tag-bg); color: var(--muted); padding: 3px 6px; border-radius: 3px; margin-right: 6px; vertical-align: 1px; letter-spacing: .02em; }
+.rk { justify-self: start; display: inline-block; min-width: 1.4rem; text-align: center; font: 600 11px/1 var(--f-mono); padding: 3px 4px; border-radius: 4px; border: 1px solid currentColor; }
+.rk-O { color: var(--rk-o); } .rk-A { color: var(--rk-a); } .rk-P { color: var(--rk-p); }
+.legend .rk-D { color: var(--faint); border-style: dashed; }
+
+.prose { max-width: 82ch; display: grid; gap: 8px; }
+.prose p { margin: 0; }
+.prose ul { margin: 0; padding-left: 20px; display: grid; gap: 3px; }
+.prose li.sub { margin-left: 18px; list-style: circle; }
+.prose .rk { vertical-align: 1px; }
+
+mark { background: var(--hit); color: inherit; border-radius: 2px; }
+.empty { color: var(--muted); margin-top: 24px; }
+#toast { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--fg); color: var(--bg); font: 13px var(--f-mono); padding: 8px 12px; border-radius: 6px; z-index: 20; }
+
+@media (max-width: 720px) {
+  .row { grid-template-columns: minmax(0, 1fr) var(--col-rk); row-gap: 1px; }
+  .nt { grid-column: 1 / -1; }
+  .nt:empty { display: none; }
+  .plain { grid-template-columns: minmax(0, 1fr) var(--col-rk); }
+}
+@media (prefers-reduced-motion: no-preference) { nav a, .row { transition: color .15s, background-color .15s; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>tsps <span>::commands</span></h1>
+    <p>277 in-game commands with exact arguments, the rank each needs, and what has to be true first. Read from the upstream server source (origin/main), 2026-11-10. <code>&lt;required&gt;</code> <code>[optional=default]</code> <code>a|b</code> = pick one. Click a command to copy it.</p>
+  </header>
+  <div class="bar">
+    <div class="search">
+      <input id="q" type="search" placeholder="Filter: nex, slayer, tele, hp…" autocomplete="off" aria-label="Filter commands">
+    </div>
+    <div class="meta legend">
+      <span id="count" aria-live="polite"></span>
+      <span>Rank: <span class="rk rk-D">&nbsp;</span> Developer</span>
+      <span><span class="rk rk-O">O</span> Owner</span>
+      <span><span class="rk rk-A">A</span> Admin</span>
+      <span><span class="rk rk-P">P</span> Anyone</span>
+    </div>
+    <nav aria-label="Sections"><a href="#read-first">Read first</a><a href="#core-character-items-world">Core: character, items, world</a><a href="#bots">Bots</a><a href="#leagues">Leagues</a><a href="#skills">Skills</a><a href="#minigames-and-raids">Minigames and raids</a><a href="#bosses">Bosses</a></nav>
+  </div>
+  <section class="sec" id="read-first"><h2>Read first</h2>
+<div class="prose">
+<p>Built 2026-11-10 from the rsps.app/host Commands tab and <code>server/plugins/**</code> <code>registerCommand</code> handlers on origin/main.</p>
+<p>If a command misbehaves, check the source: <code>git grep -n '"&lt;cmd&gt;"' origin/main -- server/plugins</code>.</p>
+<p>Run them via <code>scripts/agents/mcp</code>.</p>
+<p><strong>Parsing:</strong> the line is split on whitespace, with no quotes. The command word is lowercased; <code>::</code> or <code>/</code> prefix.</p>
+<ul>
+<li>Player names are the rest of the line, so names with spaces are typed with spaces.</li>
+<li>Name matching:</li>
+<li class="sub">Prefix-matched (exact or unique case-insensitive prefix): teleto, teletome, glow, give, setlevel.</li>
+<li class="sub">Exact name only: kick, mute, ban.</li>
+<li>Numbers are parsed with parseInt. Bad or missing numbers are often a <strong>silent no-op</strong>; otherwise you get a usage message.</li>
+<li>Item, NPC and object commands take <strong>ids only</strong>; no names.</li>
+</ul>
+<p><strong>Ranks:</strong> Player 0 &lt; Mod 1 &lt; Admin 2 &lt; Owner 3 &lt; Dev 4, and higher ranks include lower ones. world.json <code>commands:permissions</code> can override them.</p>
+<ul>
+<li>Unmarked commands below are <strong>Dev</strong>. <code><span class="rk rk-O">O</span></code> = Owner, <code><span class="rk rk-A">A</span></code> = Admin, <code><span class="rk rk-P">P</span></code> = anyone.</li>
+<li>Devs are invulnerable until <code>::mortal</code>.</li>
+</ul>
+<p><strong>Most boss/minigame commands need you inside the fight/run first.</strong> The "go there" command is listed first in each group.</p>
+<p><strong>Avoid / side effects:</strong></p>
+<ul>
+<li>Server-wide: <code>update</code>, <code>gameupdate</code>, <code>flood</code>.</li>
+<li>Writes to data or account files:</li>
+<li class="sub"><code>npcperm</code>, <code>npcanim</code>, <code>npcanimscan</code> write data JSON.</li>
+<li class="sub"><code>reprocorruptsave</code> truncates a save.</li>
+<li class="sub"><code>changepassword</code> is real.</li>
+<li class="sub"><code>copybank</code> replaces your bank.</li>
+<li class="sub"><code>rollback</code> logs the target out.</li>
+<li>Persistent: <code>displayname</code> (28-day cooldown), <code>aggro</code> (persists).</li>
+<li><code>noclip</code> has no off switch.</li>
+<li>Opens an interactive prompt/UI: <code>skull</code>, <code>redskull</code>, <code>displayname</code>, <code>items</code>, <code>npcs</code>, <code>npcanim(scan)</code>.</li>
+</ul>
+</div></section>
+<section class="sec" id="core-character-items-world"><h2>Core: character, items, world</h2>
+<div class="grp">
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::item</span><span class="ca"> &lt;id&gt; [amt=1]</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::give</span><span class="ca"> &lt;id&gt; [amt] &lt;player&gt;</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt">online, only what fits</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::items</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt">search UI</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::clearinv</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::bank</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::runes</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt">+1000 of each</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::ground</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt">10k coins</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::tele</span><span class="ca"> &lt;x&gt; &lt;y&gt; [z=cur]</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::teleto</span><span class="ca"> &lt;player&gt;</span></code><span class="sep">/</span><code><span class="cn">::teletome</span><span class="ca"> &lt;player&gt;</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::coords</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::mypos</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::up</span></code><span class="sep">/</span><code><span class="cn">::down</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt">change plane</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::home</span></code></div><span class="rk rk-P" title="Anyone">P</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::noclip</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::master</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt">all 99</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::reset</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt">all 1</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::setlevel</span><span class="ca"> &lt;skill&gt; &lt;lvl&gt; [player]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt">skill = name, unique prefix or hp|rc|wc|fm|mage; also sets xp; clears boosts</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::infhp</span></code><span class="sep">/</span><code><span class="cn">::infrun</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt">toggles</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::spec</span><span class="ca"> [pct=100]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::poisonme</span><span class="ca"> [weak|mild|extra|venom|super=super]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::unlockprayers</span><span class="ca"> &lt;0 Preserve|1 Rigour|2 Augury&gt;</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::mortal</span></code></div><span class="rk-none"></span><div class="nt">toggle (session)</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::normal</span></code><span class="sep">/</span><code><span class="cn">::lunar</span></code><span class="sep">/</span><code><span class="cn">::ancients</span></code><span class="sep">/</span><code><span class="cn">::arceuus</span></code></div><span class="rk-none"></span><div class="nt">spellbook</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::maxgear</span><span class="ca"> &lt;melee|range|mage&gt; [void]</span></code></div><span class="rk-none"></span><div class="nt">worn gear goes to the bank; inventory and stats untouched</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::npc</span><span class="ca"> &lt;id&gt; [amt=1, max 20]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::npcperm</span><span class="ca"> &lt;id&gt; [radius=0] [facing]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt">writes npc-spawns.json</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::object</span><span class="ca"> &lt;id&gt; [type=10] [face=0]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::pnpc</span><span class="ca"> &lt;npcId|-1&gt;</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::anim</span><span class="ca"> &lt;id&gt;</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::gfx</span><span class="ca"> &lt;id&gt;</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::sound</span><span class="ca"> &lt;id|SOUND_NAME&gt; [vol=1] [delay=0] [loop=1]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::interface</span><span class="ca"> &lt;id&gt;</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::chatboxinterface</span><span class="ca"> &lt;id&gt;</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::config</span><span class="ca"> &lt;varp&gt; &lt;val&gt;</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::shop</span><span class="ca"> &lt;id&gt;</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::gesell</span><span class="ca"> &lt;itemId&gt;</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::quest</span><span class="ca"> &lt;name&gt; [complete|reset|&lt;stage&gt;]</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt">partial unique name ok; no 2nd arg shows the stage; a trailing number is read as the stage</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::diary</span><span class="ca"> &lt;area&gt; [easy|medium|hard|elite|all] [complete|reset]</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt">complete/reset need a tier or <code>all</code>. Areas: karamja ardougne falador fremennik kandarin desert lumbridge morytania varrock wilderness western kourend</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::clog</span><span class="ca"> &lt;item|id&gt; [amt=1]</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::clog</span><span class="ca"> count &lt;category&gt; &lt;n&gt;</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::clog</span><span class="ca"> reset</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::ca</span><span class="ca"> complete &lt;task|id&gt;</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::ca</span><span class="ca"> kc &lt;monster&gt; &lt;n&gt;</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::ca</span><span class="ca"> reset</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::ironman</span><span class="ca"> [none|ironman|ultimate|hardcore] [player]</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::glow</span><span class="ca"> &lt;off|blood|gold|toxic|ice|royal|infernal|0-6|cycle&gt; [1-5=5] [player]</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::aggro</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt">toggle</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::randevt</span><span class="ca"> [idx]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt">zero-based; omit for random</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::forceevent</span><span class="ca"> &lt;christmas-2025|easter-2026|anniversary-2026|halloween-2025&gt; [on|off|auto=on]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::forceevent</span><span class="ca"> reset</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::star</span></code><span class="sep">/</span><code><span class="cn">::star</span><span class="ca"> spawn [size 1-9] [site 0-82|here]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt">invalid values are silently random</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::trek</span><span class="ca"> [temple|ramble] [easy|medium|hard]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::trekevent</span><span class="ca"> &lt;ghasts|snails|snakes|vampyres|nailBeasts|shades|bridge|river|boat|samaritan|off&gt;</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt">on a trek</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::clancreate</span><span class="ca"> &lt;name ≤20&gt;</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::clanadd</span><span class="ca"> &lt;online player&gt;</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::endcw</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::entvisit</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt">Vale Totems</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::save</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::saveall</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::snapshots</span><span class="ca"> &lt;name&gt;</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::rollback</span><span class="ca"> &lt;name&gt; &lt;#id|30m|2h|1d&gt;</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt">SQLite only</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::releasename</span><span class="ca"> &lt;name&gt;</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::characters</span><span class="ca"> &lt;name&gt;</span></code></div><span class="rk-none"></span><div class="nt">lists an account's characters</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::kick</span></code><span class="sep">/</span><code><span class="cn">::mute</span></code><span class="sep">/</span><code><span class="cn">::unmute</span></code><span class="sep">/</span><code><span class="cn">::ban</span></code><span class="sep">/</span><code><span class="cn">::unban</span><span class="ca"> &lt;exact name&gt;</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::ipmute</span></code><span class="sep">/</span><code><span class="cn">::ipban</span><span class="ca"> &lt;online&gt;</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt">refuses loopback, so untestable locally</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::unipmute</span></code><span class="sep">/</span><code><span class="cn">::unipban</span><span class="ca"> &lt;player|ip&gt;</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::area</span></code><span class="sep">/</span><code><span class="cn">::listsizes</span></code><span class="sep">/</span><code><span class="cn">::taskdebug</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"><span class="tag">Info, no args</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::atkrange</span><span class="ca"> [dist]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"><span class="tag">Info, no args</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::serverperf</span><span class="ca"> [ticks=60]</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"><span class="tag">Info, no args</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::pluginperf</span><span class="ca"> [once|on|off|reset] [limit=5] [ms]</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"><span class="tag">Info, no args</span></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::exactmove</span><span class="ca"> [npc] [tiles=4] [laps=1] [snap]</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">Debug</span></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::headbar</span><span class="ca"> [npc] [bar=81] [cycles]</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">Debug</span></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::ifcolour</span><span class="ca"> &lt;group&gt; &lt;child&gt; &lt;rgb15&gt;</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">Debug</span></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::cwar</span><span class="ca"> &lt;x&gt; &lt;y&gt;</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">Debug</span></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::t</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">Debug</span>non-production only</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::loglevels</span><span class="ca"> &lt;debug,info,warn,error&gt;</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">Debug</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::logtypeon</span></code><span class="sep">/</span><code><span class="cn">::logtypeoff</span><span class="ca"> &lt;type,...&gt;</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">Debug</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::logtypeclear</span><span class="ca"> [all|enabled|disabled]</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">Debug</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::logstatus</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">Debug</span></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::procregion</span><span class="ca"> &lt;rx&gt; &lt;ry&gt; [seed]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"><span class="tag">World-gen</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::procregionhere</span><span class="ca"> [seed]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"><span class="tag">World-gen</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::cleargen</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"><span class="tag">World-gen</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::procregscan</span><span class="ca"> [r=1]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"><span class="tag">World-gen</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::procreglearn</span><span class="ca"> [r=2]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"><span class="tag">World-gen</span></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::dumphouse</span><span class="ca"> &lt;tag&gt; [type]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"><span class="tag">World-gen</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::buildhouse</span><span class="ca"> &lt;style&gt; [idx]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"><span class="tag">World-gen</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::genhouse</span><span class="ca"> &lt;style&gt; [type] [seed]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"><span class="tag">World-gen</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::genstreet</span><span class="ca"> [style] [type] [seed]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"><span class="tag">World-gen</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::checkhouse</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"><span class="tag">World-gen</span></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::dumpterrain</span><span class="ca"> &lt;biome&gt;</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"><span class="tag">World-gen</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::genterrain</span><span class="ca"> &lt;biome&gt; [seed]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"><span class="tag">World-gen</span></div></div>
+</div>
+<div class="blk">
+<div class="row r plain"><div class="syn"><span class="tag">Player UIs</span>commands [search], teleports [search|last], ge, gecollect, presets/kits, house, settings, keybinds, shops, maxhit (+aliases), makeover/mm, rares, staff, players/online/who, lockxp, title &lt;text&gt;, kdr, timeplayed, creationdate, skull, redskull, yell (staff/donor)</div><span class="rk rk-P" title="Anyone">P</span><div class="nt"></div></div>
+</div>
+</div>
+</section>
+<section class="sec" id="bots"><h2>Bots</h2>
+<div class="grp">
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::bot</span><span class="ca"> [woodcutting|mining|fishing|combat_training|bank_run|roaming|pvp|auto|recruit=recruit]</span></code></div><span class="rk-none"></span><div class="nt">spawns a DevBot&lt;N&gt; beside you. recruit = geared, follows you, joins your clan</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::bh</span><span class="ca"> &lt;bot&gt; &lt;behaviour|manual&gt;</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt">manual pauses the brain</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::botcontrol</span><span class="ca"> &lt;bot&gt;</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt">back with ::botback</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::botback</span></code></div><span class="rk rk-P" title="Anyone">P</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::botme</span><span class="ca"> [on|off|toggle|status]</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::botstatsme</span><span class="ca"> &lt;bot&gt;</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::bothotspots</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::aibots</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::botname</span><span class="ca"> &lt;cur&gt; &lt;new&gt;</span></code></div><span class="rk-none"></span><div class="nt">two tokens; <code>_</code> = space</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::botinfo</span><span class="ca"> &lt;bot&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+</section>
+<section class="sec" id="leagues"><h2>Leagues</h2>
+<div class="grp">
+<p class="gnote">League-character gate: the world has <code>league:type</code> 1-6 (3 Shattered Relics, 5 Raging Echoes, 6 Demonic Pacts).</p>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::leagueunlock</span></code></div><span class="rk-none"></span><div class="nt">all relic tiers, areas and pact points</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::relic</span></code></div><span class="rk-none"></span><div class="nt">list</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::relic</span><span class="ca"> &lt;tier 1-8&gt; &lt;slot 1-3&gt;</span></code></div><span class="rk-none"></span><div class="nt">picks one; both args are needed</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::relic</span><span class="ca"> reset</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::areas</span><span class="ca"> [id|name|all]</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::league</span><span class="ca"> [player]</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::leagueshop</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::leaguetask</span><span class="ca"> &lt;id&gt; [points] [name]</span></code></div><span class="rk-none"></span><div class="nt">an unknown id needs points</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::leaguetasks</span><span class="ca"> &lt;search&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::pacts</span><span class="ca"> [point|max|buy &lt;node&gt;|reset]</span></code></div><span class="rk-none"></span><div class="nt">type 6</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::mastery</span><span class="ca"> [&lt;melee|ranged|magic&gt; &lt;1-6&gt; | point &lt;1-10&gt;]</span></code></div><span class="rk-none"></span><div class="nt">type 5</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::fragment</span><span class="ca"> &lt;id|harvesting|production|skilling|combat|misc&gt; [tier]</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::renown</span><span class="ca"> &lt;amt&gt; [player]</span></code></div><span class="rk-none"></span><div class="nt">type 3</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::leaguerecords</span><span class="ca"> &lt;trophies|statistics|rankings|firsts&gt;</span></code></div><span class="rk-none"></span><div class="nt">main character on a non-league world only</div></div>
+</div>
+</div>
+</section>
+<section class="sec" id="skills"><h2>Skills</h2>
+<div class="grp">
+<h3>Slayer</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::slayertask</span><span class="ca"> &lt;amt&gt; &lt;task name&gt;</span></code></div><span class="rk-none"></span><div class="nt">e.g. <code>20 abyssal demons</code></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::completetask</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::superior</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::slayerpoints</span><span class="ca"> &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::clearunlocks</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::mortimertasks</span><span class="ca"> &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Construction</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::maxhouse</span></code></div><span class="rk-none"></span><div class="nt">every room, fully furnished; backs up the old house</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::restorehouse</span></code></div><span class="rk-none"></span><div class="nt">undoes it</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::housemats</span><span class="ca"> &lt;furniture|room&gt;</span></code></div><span class="rk-none"></span><div class="nt">on ambiguity it lists keys, e.g. TEAK_DISPLAY</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::hotspots</span></code></div><span class="rk-none"></span><div class="nt">in a house</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::deletehouse</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Sailing</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::raft</span></code><span class="sep">/</span><code><span class="cn">::skiff</span></code><span class="sep">/</span><code><span class="cn">::sloop</span></code></div><span class="rk-none"></span><div class="nt">moor a new boat at the Pandemonium</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::pandemonium</span></code></div><span class="rk-none"></span><div class="nt">teleports there</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::maxboat</span><span class="ca"> [default|salvaging|combat|fishing]</span></code></div><span class="rk-none"></span><div class="nt">must be OFF the boat</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::boatmats</span><span class="ca"> &lt;hull|keel|sails|helm&gt; &lt;tier 0-6|name&gt; [boat]</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::boatmats</span><span class="ca"> facility &lt;name&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::sailingtools</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::boatinfo</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::crew</span><span class="ca"> &lt;all|list|reset|name|id&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::sailmode</span><span class="ca"> &lt;full|half|reverse|stop&gt;</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">Aboard only</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::heading</span><span class="ca"> &lt;0-15&gt;</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">Aboard only</span></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::chart</span><span class="ca"> go|done &lt;spot&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::chart</span><span class="ca"> reset [spot]</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::chart</span><span class="ca"> find &lt;text&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::bt</span><span class="ca"> start &lt;tempor|jubbly|gwenith&gt; [rank 0-3]</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::bt</span><span class="ca"> complete</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::bt</span><span class="ca"> intro|go &lt;trial&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::bt</span><span class="ca"> tp &lt;x&gt; &lt;y&gt;</span></code></div><span class="rk-none"></span><div class="nt">aboard</div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Other skills</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::foundryrep</span><span class="ca"> &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::resin</span><span class="ca"> &lt;mox&gt; [aga] [lye]</span></code></div><span class="rk-none"></span><div class="nt">missing values copy mox</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::digweed</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::mlmstrut</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::pizazz</span><span class="ca"> &lt;telekinetic|alchemist|enchantment|graveyard&gt; &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::tutnext</span></code><span class="sep">/</span><code><span class="cn">::tutlast</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::cannondecay</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::boltproc</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+</section>
+<section class="sec" id="minigames-and-raids"><h2>Minigames and raids</h2>
+<div class="grp">
+<h3>Colosseum</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::colosseum</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::colokill</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::cologlory</span><span class="ca"> &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::colowave</span><span class="ca"> &lt;1-12&gt;</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">Between waves</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::colomod</span><span class="ca"> &lt;name&gt; [tier 0-3=1]</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">Between waves</span>0 removes</div></div>
+</div>
+<div class="blk">
+<div class="row r plain"><div class="syn"><span class="tag">Modifier names</span>mantimayhem reentry bees volatility blasphemy relentless quartet totemic doom dynamic-duo solarflare myopia frailty red-flag</div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Gauntlet</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::gauntlet</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::gauntletstart</span><span class="ca"> [corrupted]</span></code></div><span class="rk-none"></span><div class="nt">inventory and equipment must be empty</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::gauntletmap</span><span class="ca"> [corrupted] [all]</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::gauntletboss</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">Prep stage</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::gauntlettime</span><span class="ca"> &lt;s&gt;</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">Prep stage</span></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::gauntletgear</span><span class="ca"> [basic|attuned|perfected]</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">In a run</span></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::gauntletreward</span><span class="ca"> [corrupted] [incomplete|junk]</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Inferno</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::infernowave</span><span class="ca"> &lt;1-69&gt;</span></code></div><span class="rk-none"></span><div class="nt">before or during a run</div></div>
+</div>
+</div>
+<div class="grp">
+<h3>CoX</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::cox</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::coxlayout</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::coxpoints</span><span class="ca"> &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::coxnext</span></code></div><span class="rk-none"></span><div class="nt">to the stairs</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::coxclear</span></code></div><span class="rk-none"></span><div class="nt">the room you're in</div></div>
+</div>
+</div>
+<div class="grp">
+<h3>ToB</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::tob</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::tobroom</span><span class="ca"> &lt;maiden|bloat|nylocas|sotetseg|xarpus|verzik|rewards&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::tobcomplete</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>ToA</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::toa</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::toaskippuzzle</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::toaskipboss</span></code></div><span class="rk-none"></span><div class="nt">Wardens: run twice</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::toaskiptowarden</span></code></div><span class="rk-none"></span><div class="nt">in the Nexus</div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::toaskiptoreward</span><span class="ca"> [points=20000] [level 0-600] [purple|lightbearer|fang|ward|masori|mask|body|chaps|shadow] [pet]</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>TFA</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::tfa</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::tfaguardian</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::tfaroom</span><span class="ca"> &lt;hub|bork|ezekiel|dreadnoth|xarth|ocellus|vault&gt;</span></code></div><span class="rk-none"></span><div class="nt">enters if needed</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::tfacomplete</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::tfahp</span><span class="ca"> &lt;n&gt; [2=Smork]</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::tfafade</span><span class="ca"> &lt;0-255&gt; [cycles=30]</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::tfaintro</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Wintertodt</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::wintertodt</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::wtstart</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::wtwarmth</span><span class="ca"> &lt;0-1000&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::wtrewards</span><span class="ca"> &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::wtinfo</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::wtenergy</span><span class="ca"> &lt;0-3500&gt;</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">Round active</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::wtlight</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">Round active</span></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::wtpoints</span><span class="ca"> &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">In the prison</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::wtattack</span><span class="ca"> &lt;area|small|large|pyro&gt;</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">In the prison</span></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Tempoross</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::tempoross</span></code></div><span class="rk-none"></span><div class="nt">solo start</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::tempoross</span><span class="ca"> lobby</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::tempoross</span><span class="ca"> permits &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::tempoross</span><span class="ca"> info|surface|wave|lightning|torrent</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">At the cove</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::tempoross</span><span class="ca"> energy|essence|storm|points &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">At the cove</span></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>GOTR</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::gotr</span><span class="ca"> [status|tele|skip|power &lt;n&gt;|win|lose|points &lt;elemental&gt; [catalytic]]</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+</div>
+</div>
+</section>
+<section class="sec" id="bosses"><h2>Bosses</h2>
+<div class="grp">
+<p class="gnote">Get-in commands: amoxliatl, doom, muspah, nex/nexspawn, nightmare, skotizo, sire, zulrahfight, moon.</p>
+<p class="gnote">Araxxor, Royal Titans, Mad Angel, Vardorvis and Corp have none, so walk in.</p>
+</div>
+<div class="grp">
+<h3>Sire</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::sire</span><span class="ca"> [sw|nw|ne|se]</span></code></div><span class="rk-none"></span><div class="nt">needs a task: <code>::slayertask 20 abyssal demons</code></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::sire</span><span class="ca"> reset</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::sire</span><span class="ca"> lungs</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::sire</span><span class="ca"> hp &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Amoxliatl</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::amoxliatl</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::amoxliatlhp</span><span class="ca"> &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::amoxliatlspecial</span><span class="ca"> &lt;icicle|ice&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Araxxor</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::araxxorhp</span><span class="ca"> &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::araxxorkill</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Corp</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::corpkill</span></code></div><span class="rk-none"></span><div class="nt">in the room</div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Gemstone Crab</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::gemstonecrab</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Maledictus</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::maledictus</span></code></div><span class="rk-none"></span><div class="nt">spawns it here</div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Mimic</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::mimickill</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Doom</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::doom</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::doomdelve</span><span class="ca"> [lvl=1]</span></code></div><span class="rk-none"></span><div class="nt">before surfacing</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::doomkill</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>God Wars</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::essence</span><span class="ca"> [amt=40] [bandos|armadyl|saradomin|zamorak|ancient]</span></code></div><span class="rk rk-A" title="Admin">A</span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Hueycoatl</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::huey</span><span class="ca"> body|shield|tail|braziers|intro</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">in camp</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::huey</span><span class="ca"> hp &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">in camp</span></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::huey</span><span class="ca"> symbol [glow|strike]</span></code></div><span class="rk-none"></span><div class="nt"><span class="tag">in camp</span></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Mad Angel</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::madangelhp</span><span class="ca"> &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::madangelspecial</span><span class="ca"> &lt;sweep|blast|smite&gt;</span></code></div><span class="rk-none"></span><div class="nt">lowercase</div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Moons</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::moon</span><span class="ca"> &lt;blood|blue|eclipse&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::moonphase</span><span class="ca"> &lt;moon&gt; &lt;0-7&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::moonhp</span><span class="ca"> &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::moondead</span><span class="ca"> [moon=all]</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::moonreset</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Nex</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::nex</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::nexspawn</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::nexphase</span><span class="ca"> &lt;2-5&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::nexhp</span><span class="ca"> &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::nexend</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::nexspecial</span><span class="ca"> &lt;virus|dash|smash|darkness|siphon|sacrifice|containment|prison&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Nightmare</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::nightmare</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::nmskip</span></code></div><span class="rk-none"></span><div class="nt">countdown</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::nmshield</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::nmtotems</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::nmspecial</span><span class="ca"> &lt;claws|husks|flowers|curse|parasite|spores|surge&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Muspah</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::muspah</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::muspahhp</span><span class="ca"> &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::muspahshield</span><span class="ca"> &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::muspahkill</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Royal Titans</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::royalhp</span><span class="ca"> &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::royalkill</span></code></div><span class="rk-none"></span><div class="nt">to 1 HP</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::royalblast</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Skotizo</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::skotizo</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::skotizohp</span><span class="ca"> &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::skotizoaltars</span><span class="ca"> [count]</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Vardorvis</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::vardorvishp</span><span class="ca"> &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::vardorvisforce</span><span class="ca"> &lt;axes|head|dash|strangle&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Yama</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::yamahp</span><span class="ca"> &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::yamakill</span></code></div><span class="rk-none"></span><div class="nt">phase 3 only</div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::yamajudgehp</span><span class="ca"> &lt;n&gt;</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::yamajudgekill</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Zulrah</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::zulrah</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::zulrahfight</span><span class="ca"> [rotation 1-4]</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::zulrahkill</span></code></div><span class="rk-none"></span><div class="nt"></div></div>
+</div>
+</div>
+<div class="grp">
+<h3>Wilderness bosses</h3>
+<div class="blk">
+<div class="row r"><div class="syn"><code><span class="cn">::wildboss</span><span class="ca"> &lt;callisto|artio|vetion|calvarion|venenatis|spindel&gt;</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt"></div></div>
+<div class="row r"><div class="syn"><code><span class="cn">::wildbosshp</span><span class="ca"> &lt;pct&gt;</span></code></div><span class="rk rk-O" title="Owner">O</span><div class="nt">within 32 tiles, Scorpia too</div></div>
+</div>
+</div>
+</section>
+  <p class="empty" id="empty" hidden>No commands match. Try a shorter word.</p>
+</div>
+<div id="toast" hidden>Copied</div>
+<script>
+(function(){
+  const q = document.getElementById('q'), count = document.getElementById('count'), empty = document.getElementById('empty');
+  const rows = [...document.querySelectorAll('.r')];
+  rows.forEach(el => el.dataset.html = el.innerHTML);
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  function mark(el, re){
+    const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    const nodes = []; while (walk.nextNode()) nodes.push(walk.currentNode);
+    nodes.forEach(n => {
+      re.lastIndex = 0; if (!re.test(n.nodeValue)) return; re.lastIndex = 0;
+      const span = document.createElement('span');
+      span.innerHTML = n.nodeValue.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])).replace(re, m => '<mark>'+m+'</mark>');
+      n.replaceWith(...span.childNodes);
+    });
+  }
+  function run(){
+    const v = q.value.trim().replace(/^::/, '').toLowerCase();
+    let shown = 0;
+    rows.forEach(el => {
+      el.innerHTML = el.dataset.html;
+      const grp = el.closest('.grp'), title = grp && grp.querySelector('h3');
+      const hay = (el.textContent + ' ' + (title ? title.textContent : '')).toLowerCase();
+      const ok = !v || hay.includes(v);
+      el.hidden = !ok;
+      if (ok) { shown++; if (v) mark(el, new RegExp(esc(v), 'gi')); }
+    });
+    document.querySelectorAll('.blk').forEach(b => b.hidden = !!v && !b.querySelector('.r:not([hidden])'));
+    document.querySelectorAll('.grp').forEach(g => g.hidden = !!v && !g.querySelector('.r:not([hidden])'));
+    document.querySelectorAll('.sec').forEach(s => s.hidden = !!v && (s.id === 'read-first' || !s.querySelector('.r:not([hidden])')));
+    count.textContent = v ? shown + ' matching rows' : rows.length + ' rows';
+    empty.hidden = !v || shown > 0;
+  }
+  try { const s = sessionStorage.getItem('q'); if (s) q.value = s; } catch(e){}
+  q.addEventListener('input', () => { run(); try { sessionStorage.setItem('q', q.value); } catch(e){} });
+  run();
+  const toast = document.getElementById('toast'); let t;
+  document.addEventListener('click', e => {
+    const c = e.target.closest('.syn code'); if (!c) return;
+    const cn = c.querySelector('.cn');
+    const full = c.textContent.trim();
+    const txt = cn && /[<\[]/.test(full) ? cn.textContent + ' ' : full;
+    const done = () => { c.classList.add('copied'); toast.textContent = 'Copied ' + txt.trim(); toast.hidden = false; clearTimeout(t); t = setTimeout(() => { toast.hidden = true; c.classList.remove('copied'); }, 1400); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(c); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+    try { navigator.clipboard.writeText(txt).then(done, fallback); } catch(err) { fallback(); }
+  });
+  document.addEventListener('keydown', e => { if (e.key === '/' && document.activeElement !== q) { e.preventDefault(); q.focus(); } });
+})();
+</script>
+</body>
+</html>

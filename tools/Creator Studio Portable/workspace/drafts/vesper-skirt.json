@@ -1,0 +1,19 @@
+{
+  "kind": "npc",
+  "name": "Vesper Skirt",
+  "id": null,
+  "source": {
+    "type": "osrs",
+    "id": 3015,
+    "name": "Woman"
+  },
+  "npc": {
+    "baseNpcId": 3015,
+    "fields": {},
+    "models": null,
+    "combat": {},
+    "spawns": []
+  },
+  "slug": "vesper-skirt",
+  "updated": "2026-11-28T02:34:58.771Z"
+}

@@ -1,0 +1,19 @@
+{
+  "kind": "npc",
+  "name": "Vesper Bun",
+  "id": null,
+  "source": {
+    "type": "osrs",
+    "id": 1130,
+    "name": "Woman"
+  },
+  "npc": {
+    "baseNpcId": 1130,
+    "fields": {},
+    "models": null,
+    "combat": {},
+    "spawns": []
+  },
+  "slug": "vesper-bun",
+  "updated": "2026-11-28T02:34:59.216Z"
+}
